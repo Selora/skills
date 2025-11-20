@@ -193,7 +193,7 @@ This placeholder represents where asset files would be stored.
 Replace with actual asset files (templates, images, fonts, etc.) or delete if not needed.
 
 Asset files are NOT intended to be loaded into context, but rather used within
-the output Claude produces.
+output Claude produces.
 
 Example asset files from other skills:
 - Brand guidelines: logo.png, slides_template.pptx
@@ -211,6 +211,93 @@ Example asset files from other skills:
 - Data files: .csv, .json, .xml, .yaml
 
 Note: This is a text placeholder. Actual assets can be any file type.
+"""
+
+SKILLIGNORE_TEMPLATE = """# Files and directories to exclude from .skill packaging
+# This file follows .gitignore syntax patterns
+
+# Python virtual environments (always exclude)
+.venv/
+venv/
+env/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+.cache/
+
+# Test files and coverage
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation build
+docs/_build/
+site/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Skill-specific excludes (add as needed)
+# *.local
+# secrets/
+# private/
 """
 
 
@@ -293,6 +380,11 @@ def init_skill(skill_name, path):
         example_asset = assets_dir / "example_asset.txt"
         example_asset.write_text(EXAMPLE_ASSET)
         print("✅ Created assets/example_asset.txt")
+
+        # Create .skillignore file for packaging exclusions
+        skillignore_path = skill_dir / ".skillignore"
+        skillignore_path.write_text(SKILLIGNORE_TEMPLATE)
+        print("✅ Created .skillignore")
     except Exception as e:
         print(f"❌ Error creating resource directories: {e}")
         return None

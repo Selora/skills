@@ -475,7 +475,12 @@ The packaging script will:
    - Description completeness and quality
    - File organization and resource references
 
-2. **Package** the skill if validation passes, creating a .skill file named after the skill (e.g., `my-skill.skill`) that includes all files and maintains the proper directory structure for distribution. The .skill file is a zip file with a .skill extension.
+2. **Read .skillignore** (if present) to exclude unnecessary files:
+   - Automatically excludes `.venv/`, `__pycache__/`, compiled Python files
+   - Excludes IDE files, OS files, logs, and temporary files
+   - Follows gitignore syntax patterns for flexible exclusions
+
+3. **Package** the skill if validation passes, creating a .skill file named after the skill (e.g., `my-skill.skill`) that includes only necessary files and maintains the proper directory structure for distribution. The .skill file is a zip file with a .skill extension.
 
 If validation fails, the script will report the errors and exit without creating a package. Fix any validation errors and run the packaging command again.
 
