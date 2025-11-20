@@ -79,6 +79,56 @@ Executable code (Python/Bash/etc.) for tasks that require deterministic reliabil
 - **Benefits**: Token efficient, deterministic, may be executed without loading into context
 - **Note**: Scripts may still need to be read by Claude for patching or environment-specific adjustments
 
+##### Python scripts
+
+Depends on `uv` being installed & in PATH.
+
+Python skills are self-contained `uv` projects and MUST NOT modify or depend on the host project’s environment.
+
+**Layout**
+
+- Each skill directory contains:
+  - its own `pyproject.toml` (skill-only dependencies)
+  - a `scripts/` subdirectory with one or more `*.py` files
+  - a uv-managed `.venv/` (created on first run, not committed)
+
+Example:
+
+```text
+skills/
+  <skill-name>/
+    pyproject.toml
+    scripts/
+      main.py
+      helpers.py
+```
+
+**Agent execution rules (Python)**
+
+When an agent uses a Python skill:
+
+1. **Set the working directory** to the skill root (the directory containing `pyproject.toml`), e.g.:
+
+   - `cwd = skills/<skill-name>`
+
+2. **Run the entry script via uv**:
+
+   ```bash
+   uv run --no-active scripts/main.py
+   ```
+
+   - `scripts/main.py` is the entrypoint. It may also call other scripts directly, providing they have an `if __name__ == "__main__":` block.
+   - Other modules from `scripts/`  can be imported using normal Python imports (`from helpers import …`).
+   - uv resolves dependencies from the skill’s `pyproject.toml`, creates/reuses the skill-local `.venv/`, and ignores any active outer `.venv`.
+   - Agents MUST pass `--no-active` when running skills. This silence warnings when a .venv is already activated.
+   - Agents MUST NOT use `--active` for skills (that would deliberately bind them to the host project’s venv).
+
+**Agents MUST NOT**
+
+- Run `uv` from the host project root targeting scripts inside a skill.
+- Add skill dependencies to the host project.
+- Bind skills to the host project’s interpreter or virtual environment.
+
 ##### References (`references/`)
 
 Documentation and reference material intended to be loaded as needed into context to inform Claude's process and thinking.
@@ -261,10 +311,22 @@ Skip this step only if the skill being developed already exists, and iteration o
 
 When creating a new skill from scratch, always run the `init_skill.py` script. The script conveniently generates a new template skill directory that automatically includes everything a skill requires, making the skill creation process much more efficient and reliable.
 
-Usage:
+**Agent Execution Instructions:**
+
+Since the skill-creator uses Python scripts, agents must use UV for isolated execution:
+
+1. **Set working directory** to the skill-creator root (where this pyproject.toml is located)
+2. **Run the initialization script** with UV:
 
 ```bash
-scripts/init_skill.py <skill-name> --path <output-directory>
+uv run --no-active scripts/init_skill.py <skill-name> --path <output-directory>
+```
+
+**Examples:**
+```bash
+uv run --no-active scripts/init_skill.py my-new-skill --path skills/public
+uv run --no-active scripts/init_skill.py my-api-helper --path skills/private
+uv run --no-active scripts/init_skill.py custom-skill --path /custom/location
 ```
 
 The script:
@@ -275,6 +337,31 @@ The script:
 - Adds example files in each directory that can be customized or deleted
 
 After initialization, customize or remove the generated SKILL.md and example files as needed.
+
+### Step 3.5: Validate the Skill (Optional)
+
+You can validate a skill at any time during development to check for compliance with skill requirements:
+
+**Agent Execution Instructions:**
+
+1. **Set working directory** to the skill-creator root (where this pyproject.toml is located)
+2. **Run the validation script** with UV:
+
+```bash
+uv run --no-active scripts/quick_validate.py <path/to/skill-folder>
+```
+
+**Example:**
+```bash
+uv run --no-active scripts/quick_validate.py skills/public/my-skill
+```
+
+The validation checks:
+- YAML frontmatter format and required fields
+- Skill naming conventions and directory structure
+- Description completeness and quality
+- File organization and resource references
+- Proper pyproject.toml for Python skills
 
 ### Step 4: Edit the Skill
 
@@ -319,16 +406,29 @@ Write instructions for using the skill and its bundled resources.
 
 ### Step 5: Packaging a Skill
 
-Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. The packaging process automatically validates the skill first to ensure it meets all requirements:
+Once development of the skill is complete, it must be packaged into a distributable .skill file that gets shared with the user. The packaging process automatically validates the skill first to ensure it meets all requirements.
+
+**Agent Execution Instructions:**
+
+Since the skill-creator uses Python scripts, agents must use UV for isolated execution:
+
+1. **Set working directory** to the skill-creator root (where this pyproject.toml is located)
+2. **Run the packaging script** with UV:
 
 ```bash
-scripts/package_skill.py <path/to/skill-folder>
+uv run --no-active scripts/package_skill.py <path/to/skill-folder>
 ```
 
 Optional output directory specification:
 
 ```bash
-scripts/package_skill.py <path/to/skill-folder> ./dist
+uv run --no-active scripts/package_skill.py <path/to/skill-folder> ./dist
+```
+
+**Examples:**
+```bash
+uv run --no-active scripts/package_skill.py skills/public/my-skill
+uv run --no-active scripts/package_skill.py skills/public/my-skill ./dist
 ```
 
 The packaging script will:

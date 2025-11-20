@@ -17,7 +17,7 @@ from pathlib import Path
 
 SKILL_TEMPLATE = """---
 name: {skill_name}
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: "TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it."
 ---
 
 # {skill_title}
@@ -75,6 +75,11 @@ Executable code (Python/Bash/etc.) that can be run directly to perform specific 
 
 **Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
 
+**Python Scripts:** Python skills are self-contained UV projects with isolated dependencies. When agents use Python scripts:
+1. Set working directory to the skill root (containing pyproject.toml)
+2. Run with: `uv run --no-active scripts/your-script.py`
+3. Dependencies are managed in the skill's pyproject.toml, not the host project
+
 **Note:** Scripts may be executed without loading into context, but can still be read by Claude for patching or environment adjustments.
 
 ### references/
@@ -102,12 +107,29 @@ Files not intended to be loaded into context, but rather used within the output 
 **Any unneeded directories can be deleted.** Not every skill requires all three types of resources.
 """
 
+EXAMPLE_PYPROJECT = """[project]
+name = "{skill_name}"
+requires-python = ">=3.14"
+version = "0.1.0"
+description = "Skill dependencies for {skill_name}"
+dependencies = [
+    # Add skill-specific dependencies here
+    # Example: "requests>=2.28.0",
+    # Example: "pandas>=1.5.0",
+]
+"""
+
 EXAMPLE_SCRIPT = '''#!/usr/bin/env python3
 """
 Example helper script for {skill_name}
 
 This is a placeholder script that can be executed directly.
 Replace with actual implementation or delete if not needed.
+
+IMPORTANT AGENT EXECUTION INSTRUCTIONS:
+- Set working directory to the skill root (where pyproject.toml is located)
+- Run with: uv run --no-active scripts/example.py
+- This ensures isolated dependency management and doesn't affect the host project
 
 Example real scripts from other skills:
 - pdf/scripts/fill_fillable_fields.py - Fills PDF form fields
@@ -188,7 +210,7 @@ Note: This is a text placeholder. Actual assets can be any file type.
 
 def title_case_skill_name(skill_name):
     """Convert hyphenated skill name to Title Case for display."""
-    return ' '.join(word.capitalize() for word in skill_name.split('-'))
+    return " ".join(word.capitalize() for word in skill_name.split("-"))
 
 
 def init_skill(skill_name, path):
@@ -221,11 +243,10 @@ def init_skill(skill_name, path):
     # Create SKILL.md from template
     skill_title = title_case_skill_name(skill_name)
     skill_content = SKILL_TEMPLATE.format(
-        skill_name=skill_name,
-        skill_title=skill_title
+        skill_name=skill_name, skill_title=skill_title
     )
 
-    skill_md_path = skill_dir / 'SKILL.md'
+    skill_md_path = skill_dir / "SKILL.md"
     try:
         skill_md_path.write_text(skill_content)
         print("✅ Created SKILL.md")
@@ -233,27 +254,37 @@ def init_skill(skill_name, path):
         print(f"❌ Error creating SKILL.md: {e}")
         return None
 
+    # Create pyproject.toml for UV dependency management
+    try:
+        pyproject_path = skill_dir / "pyproject.toml"
+        pyproject_content = EXAMPLE_PYPROJECT.format(skill_name=skill_name)
+        pyproject_path.write_text(pyproject_content)
+        print("✅ Created pyproject.toml")
+    except Exception as e:
+        print(f"❌ Error creating pyproject.toml: {e}")
+        return None
+
     # Create resource directories with example files
     try:
         # Create scripts/ directory with example script
-        scripts_dir = skill_dir / 'scripts'
+        scripts_dir = skill_dir / "scripts"
         scripts_dir.mkdir(exist_ok=True)
-        example_script = scripts_dir / 'example.py'
+        example_script = scripts_dir / "example.py"
         example_script.write_text(EXAMPLE_SCRIPT.format(skill_name=skill_name))
         example_script.chmod(0o755)
         print("✅ Created scripts/example.py")
 
         # Create references/ directory with example reference doc
-        references_dir = skill_dir / 'references'
+        references_dir = skill_dir / "references"
         references_dir.mkdir(exist_ok=True)
-        example_reference = references_dir / 'api_reference.md'
+        example_reference = references_dir / "api_reference.md"
         example_reference.write_text(EXAMPLE_REFERENCE.format(skill_title=skill_title))
         print("✅ Created references/api_reference.md")
 
         # Create assets/ directory with example asset placeholder
-        assets_dir = skill_dir / 'assets'
+        assets_dir = skill_dir / "assets"
         assets_dir.mkdir(exist_ok=True)
-        example_asset = assets_dir / 'example_asset.txt'
+        example_asset = assets_dir / "example_asset.txt"
         example_asset.write_text(EXAMPLE_ASSET)
         print("✅ Created assets/example_asset.txt")
     except Exception as e:
@@ -264,14 +295,20 @@ def init_skill(skill_name, path):
     print(f"\n✅ Skill '{skill_name}' initialized successfully at {skill_dir}")
     print("\nNext steps:")
     print("1. Edit SKILL.md to complete the TODO items and update the description")
-    print("2. Customize or delete the example files in scripts/, references/, and assets/")
-    print("3. Run the validator when ready to check the skill structure")
+    print("2. Add dependencies to pyproject.toml if needed")
+    print(
+        "3. Customize or delete the example files in scripts/, references/, and assets/"
+    )
+    print("4. Run the validator when ready to check the skill structure")
+    print("\nIMPORTANT: When agents use Python scripts from this skill, they must:")
+    print(f"  - Set working directory to: {skill_dir}")
+    print(f"  - Run: uv run --no-active scripts/your-script.py")
 
     return skill_dir
 
 
 def main():
-    if len(sys.argv) < 4 or sys.argv[2] != '--path':
+    if len(sys.argv) < 4 or sys.argv[2] != "--path":
         print("Usage: init_skill.py <skill-name> --path <path>")
         print("\nSkill name requirements:")
         print("  - Hyphen-case identifier (e.g., 'data-analyzer')")
