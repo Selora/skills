@@ -313,21 +313,36 @@ When creating a new skill from scratch, always run the `init_skill.py` script. T
 
 **Agent Execution Instructions:**
 
-Since the skill-creator uses Python scripts, agents must use UV for isolated execution:
+Since the skill-creator uses Python scripts, agents must use UV for isolated execution.
 
-1. **Set working directory** to the skill-creator root (where this pyproject.toml is located)
+**CRITICAL: Always set working directory first!** The skill-creator scripts MUST be run from the skill-creator root directory (where this pyproject.toml is located) to ensure proper dependency management.
+
+1. **Change to skill-creator directory:**
+   ```bash
+   cd .agent/skills/skill-creator
+   ```
+
 2. **Run the initialization script** with UV:
+   ```bash
+   uv run --no-active scripts/init_skill.py <skill-name> --path <output-directory>
+   ```
 
+**Complete Examples:**
 ```bash
-uv run --no-active scripts/init_skill.py <skill-name> --path <output-directory>
-```
-
-**Examples:**
-```bash
+# Example 1: Create a public skill
+cd .agent/skills/skill-creator
 uv run --no-active scripts/init_skill.py my-new-skill --path skills/public
+
+# Example 2: Create a private skill  
+cd .agent/skills/skill-creator
 uv run --no-active scripts/init_skill.py my-api-helper --path skills/private
+
+# Example 3: Create skill in custom location
+cd .agent/skills/skill-creator
 uv run --no-active scripts/init_skill.py custom-skill --path /custom/location
 ```
+
+**⚠️ WARNING:** Running uv commands from any other directory will fail because the pyproject.toml and dependency isolation won't be found.
 
 The script:
 
@@ -344,17 +359,26 @@ You can validate a skill at any time during development to check for compliance 
 
 **Agent Execution Instructions:**
 
-1. **Set working directory** to the skill-creator root (where this pyproject.toml is located)
+**CRITICAL: Always set working directory first!** The skill-creator scripts MUST be run from the skill-creator root directory (where this pyproject.toml is located).
+
+1. **Change to skill-creator directory:**
+   ```bash
+   cd .agent/skills/skill-creator
+   ```
+
 2. **Run the validation script** with UV:
+   ```bash
+   uv run --no-active scripts/quick_validate.py <path/to/skill-folder>
+   ```
 
+**Complete Example:**
 ```bash
-uv run --no-active scripts/quick_validate.py <path/to/skill-folder>
-```
-
-**Example:**
-```bash
+# Validate a skill
+cd .agent/skills/skill-creator
 uv run --no-active scripts/quick_validate.py skills/public/my-skill
 ```
+
+**⚠️ WARNING:** Running uv commands from any other directory will fail because the pyproject.toml and dependency isolation won't be found.
 
 The validation checks:
 - YAML frontmatter format and required fields
@@ -410,26 +434,37 @@ Once development of the skill is complete, it must be packaged into a distributa
 
 **Agent Execution Instructions:**
 
-Since the skill-creator uses Python scripts, agents must use UV for isolated execution:
+Since the skill-creator uses Python scripts, agents must use UV for isolated execution.
 
-1. **Set working directory** to the skill-creator root (where this pyproject.toml is located)
+**CRITICAL: Always set working directory first!** The skill-creator scripts MUST be run from the skill-creator root directory (where this pyproject.toml is located).
+
+1. **Change to skill-creator directory:**
+   ```bash
+   cd .agent/skills/skill-creator
+   ```
+
 2. **Run the packaging script** with UV:
-
-```bash
-uv run --no-active scripts/package_skill.py <path/to/skill-folder>
-```
+   ```bash
+   uv run --no-active scripts/package_skill.py <path/to/skill-folder>
+   ```
 
 Optional output directory specification:
+   ```bash
+   uv run --no-active scripts/package_skill.py <path/to/skill-folder> ./dist
+   ```
 
+**Complete Examples:**
 ```bash
-uv run --no-active scripts/package_skill.py <path/to/skill-folder> ./dist
-```
-
-**Examples:**
-```bash
+# Package a skill to current directory
+cd .agent/skills/skill-creator
 uv run --no-active scripts/package_skill.py skills/public/my-skill
+
+# Package a skill to specific output directory
+cd .agent/skills/skill-creator
 uv run --no-active scripts/package_skill.py skills/public/my-skill ./dist
 ```
+
+**⚠️ WARNING:** Running uv commands from any other directory will fail because the pyproject.toml and dependency isolation won't be found.
 
 The packaging script will:
 

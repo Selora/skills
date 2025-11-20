@@ -126,10 +126,16 @@ Example helper script for {skill_name}
 This is a placeholder script that can be executed directly.
 Replace with actual implementation or delete if not needed.
 
-IMPORTANT AGENT EXECUTION INSTRUCTIONS:
-- Set working directory to the skill root (where pyproject.toml is located)
+⚠️  CRITICAL AGENT EXECUTION INSTRUCTIONS:
+- ALWAYS set working directory to the skill root (where pyproject.toml is located)
 - Run with: uv run --no-active scripts/example.py
 - This ensures isolated dependency management and doesn't affect the host project
+
+COMPLETE EXAMPLE:
+```bash
+cd /path/to/skills/{skill_name}
+uv run --no-active scripts/example.py
+```
 
 Example real scripts from other skills:
 - pdf/scripts/fill_fillable_fields.py - Fills PDF form fields
@@ -310,15 +316,27 @@ def init_skill(skill_name, path):
 def main():
     if len(sys.argv) < 4 or sys.argv[2] != "--path":
         print("Usage: init_skill.py <skill-name> --path <path>")
+        print(
+            "\n⚠️  IMPORTANT: This script must be run from the skill-creator directory!"
+        )
+        print("   First run: cd .agent/skills/skill-creator")
+        print(
+            "   Then run: uv run --no-active scripts/init_skill.py <skill-name> --path <path>"
+        )
         print("\nSkill name requirements:")
         print("  - Hyphen-case identifier (e.g., 'data-analyzer')")
         print("  - Lowercase letters, digits, and hyphens only")
         print("  - Max 40 characters")
         print("  - Must match directory name exactly")
-        print("\nExamples:")
-        print("  init_skill.py my-new-skill --path skills/public")
-        print("  init_skill.py my-api-helper --path skills/private")
-        print("  init_skill.py custom-skill --path /custom/location")
+        print("\nComplete examples:")
+        print("  cd .agent/skills/skill-creator")
+        print(
+            "  uv run --no-active scripts/init_skill.py my-new-skill --path skills/public"
+        )
+        print("  cd .agent/skills/skill-creator")
+        print(
+            "  uv run --no-active scripts/init_skill.py my-api-helper --path skills/private"
+        )
         sys.exit(1)
 
     skill_name = sys.argv[1]
