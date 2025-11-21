@@ -118,16 +118,17 @@ def validate_skill(skill_path):
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: quick_validate.py <skill_directory>")
+        print("\n⚠️  IMPORTANT: Use the universal skill runner!")
+        print("   First ensure run_python_skill.sh is in PATH (see SKILL.md for setup)")
+        print("   NOTE: .scripts/ is at project root, not in skill directories")
+        print("   Use project-local PATH setup (PATH_add macro in .envrc)")
         print(
-            "\n⚠️  IMPORTANT: This script must be run from the skill-creator directory!"
-        )
-        print("   First run: cd .agent/skills/skill-creator")
-        print(
-            "   Then run: uv run --no-active scripts/quick_validate.py <skill_directory>"
+            "   Then run: run_python_skill.sh skill-creator quick_validate.py <skill_directory>"
         )
         print("\nComplete example:")
-        print("  cd .agent/skills/skill-creator")
-        print("  uv run --no-active scripts/quick_validate.py skills/public/my-skill")
+        print(
+            "  run_python_skill.sh skill-creator quick_validate.py skills/public/my-skill"
+        )
         sys.exit(1)
 
     valid, message = validate_skill(sys.argv[1])

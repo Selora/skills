@@ -22,6 +22,55 @@ equipped with procedural knowledge that no model can fully possess.
 3. Domain expertise - Company-specific knowledge, schemas, business logic
 4. Bundled resources - Scripts, references, and assets for complex and repetitive tasks
 
+## Skill Execution Requirements
+
+**IMPORTANT**: All Python skill execution MUST use the universal skill runner `run_python_skill.sh`.
+
+### PATH Setup (One-Time Configuration)
+
+**IMPORTANT**: `.scripts` directory is at the **project root** (same level as `.agent/`), not inside individual skill directories.
+
+**Project Structure:**
+
+```
+project-root/
+├── .agent/
+│   └── skills/
+│       ├── skill-creator/
+│       ├── html-to-markdown/
+│       └── ip-fetcher/
+└── .scripts/                    # ← HERE - at project root
+    └── run_python_skill.sh   # ← symlinked here
+```
+
+**Option 1: Add to PATH (Project-Local)**
+```bash
+# From project root (where .agent/ directory is located)
+export PATH="$(pwd)/.scripts:$PATH"
+
+# Add to .envrc for project-specific PATH setup (uses existing PATH_add macro)
+echo 'PATH_add "$(pwd)/.scripts"' >> .envrc
+```
+
+**Option 2: Use devenv Environment**
+
+- If using devenv with agent profile, PATH is automatically configured
+- The runner is symlinked from project root to `.scripts/run_python_skill.sh`
+
+**Option 3: Portable Fallback**
+
+- If PATH modification is not possible: `.agent/skills/skill-creator/assets/run_python_skill.sh`
+
+### Usage (After PATH Setup)
+
+Once `run_python_skill.sh` is in PATH, all examples use this clean syntax:
+
+```bash
+run_python_skill.sh <skill-name> <script-name> [args...]
+```
+
+The universal runner handles directory changes, uv execution, and argument passing. Do NOT use manual `cd` and `uv run` commands - this creates inconsistencies and errors.
+
 ## Core Principles
 
 ### Concise is Key
@@ -128,6 +177,50 @@ When an agent uses a Python skill:
 - Run `uv` from the host project root targeting scripts inside a skill.
 - Add skill dependencies to the host project.
 - Bind skills to the host project’s interpreter or virtual environment.
+
+### Universal Skill Runner
+
+To ensure consistent execution across all environments, use the universal skill runner script:
+
+**Primary Usage (when available in PATH):**
+
+```bash
+run_python_skill.sh <skill-name> <script-name> [args...]
+```
+
+**Portable Usage (when not in PATH):**
+
+```bash
+# From skill-creator assets
+.agent/skills/skill-creator/assets/run_python_skill.sh <skill-name> <script-name> [args...]
+
+# Or copy to your project and use:
+.scripts/run_python_skill.sh <skill-name> <script-name> [args...]
+```
+
+**Features:**
+
+- Handles directory changes automatically
+- Validates skill paths and script names
+- Supports nested skills (e.g., `document-skills/docx`)
+- Passes all arguments 1:1 to Python scripts
+- Works with custom `SKILL_DIR` environment variable
+- Provides clear error messages and colored output
+
+**Examples:**
+
+```bash
+# Simple skill
+run_python_skill.sh html-to-markdown convert.py input.html
+
+# Nested skill
+run_python_skill.sh document-skills/docx convert.py document.docx
+
+# Custom skill directory
+SKILL_DIR=/custom/skills run_python_skill.sh my-skill script.py arg1 arg2
+```
+
+The runner script is included in `skill-creator/assets/run_python_skill.sh` for portability outside this development environment.
 
 ##### References (`references/`)
 
@@ -315,34 +408,26 @@ When creating a new skill from scratch, always run the `init_skill.py` script. T
 
 Since the skill-creator uses Python scripts, agents must use UV for isolated execution.
 
-**CRITICAL: Always set working directory first!** The skill-creator scripts MUST be run from the skill-creator root directory (where this pyproject.toml is located) to ensure proper dependency management.
+**Use the universal skill runner:**
 
-1. **Change to skill-creator directory:**
-   ```bash
-   cd .agent/skills/skill-creator
-   ```
-
-2. **Run the initialization script** with UV:
-   ```bash
-   uv run --no-active scripts/init_skill.py <skill-name> --path <output-directory>
-   ```
-
-**Complete Examples:**
 ```bash
-# Example 1: Create a public skill
-cd .agent/skills/skill-creator
-uv run --no-active scripts/init_skill.py my-new-skill --path skills/public
-
-# Example 2: Create a private skill  
-cd .agent/skills/skill-creator
-uv run --no-active scripts/init_skill.py my-api-helper --path skills/private
-
-# Example 3: Create skill in custom location
-cd .agent/skills/skill-creator
-uv run --no-active scripts/init_skill.py custom-skill --path /custom/location
+run_python_skill.sh skill-creator init_skill.py <skill-name> --path <output-directory>
 ```
 
-**⚠️ WARNING:** Running uv commands from any other directory will fail because the pyproject.toml and dependency isolation won't be found.
+**Complete Examples:**
+
+```bash
+# Example 1: Create a public skill
+run_python_skill.sh skill-creator init_skill.py my-new-skill --path skills/public
+
+# Example 2: Create a private skill  
+run_python_skill.sh skill-creator init_skill.py my-api-helper --path skills/private
+
+# Example 3: Create skill in custom location
+run_python_skill.sh skill-creator init_skill.py custom-skill --path /custom/location
+```
+
+**⚠️ WARNING:** Do NOT use manual `cd` and `uv run` commands. The universal runner handles directory changes and dependency isolation automatically.
 
 The script:
 
@@ -362,25 +447,28 @@ You can validate a skill at any time during development to check for compliance 
 **CRITICAL: Always set working directory first!** The skill-creator scripts MUST be run from the skill-creator root directory (where this pyproject.toml is located).
 
 1. **Change to skill-creator directory:**
+
    ```bash
    cd .agent/skills/skill-creator
    ```
 
-2. **Run the validation script** with UV:
+2. **Run the validation script**:
+
    ```bash
-   uv run --no-active scripts/quick_validate.py <path/to/skill-folder>
+   run_python_skill.sh skill-creator quick_validate.py <path/to/skill-folder>
    ```
 
 **Complete Example:**
+
 ```bash
 # Validate a skill
-cd .agent/skills/skill-creator
-uv run --no-active scripts/quick_validate.py skills/public/my-skill
+run_python_skill.sh skill-creator quick_validate.py skills/public/my-skill
 ```
 
-**⚠️ WARNING:** Running uv commands from any other directory will fail because the pyproject.toml and dependency isolation won't be found.
+**⚠️ WARNING:** Do NOT use manual `cd` and `uv run` commands. The universal runner handles directory changes and dependency isolation automatically.
 
 The validation checks:
+
 - YAML frontmatter format and required fields
 - Skill naming conventions and directory structure
 - Description completeness and quality
@@ -436,35 +524,29 @@ Once development of the skill is complete, it must be packaged into a distributa
 
 Since the skill-creator uses Python scripts, agents must use UV for isolated execution.
 
-**CRITICAL: Always set working directory first!** The skill-creator scripts MUST be run from the skill-creator root directory (where this pyproject.toml is located).
+**Use the universal skill runner:**
 
-1. **Change to skill-creator directory:**
-   ```bash
-   cd .agent/skills/skill-creator
-   ```
-
-2. **Run the packaging script** with UV:
-   ```bash
-   uv run --no-active scripts/package_skill.py <path/to/skill-folder>
-   ```
+```bash
+run_python_skill.sh skill-creator package_skill.py <path/to/skill-folder>
+```
 
 Optional output directory specification:
+
    ```bash
-   uv run --no-active scripts/package_skill.py <path/to/skill-folder> ./dist
+   run_python_skill.sh skill-creator package_skill.py <path/to/skill-folder> ./dist
    ```
 
 **Complete Examples:**
+
 ```bash
 # Package a skill to current directory
-cd .agent/skills/skill-creator
-uv run --no-active scripts/package_skill.py skills/public/my-skill
+run_python_skill.sh skill-creator package_skill.py skills/public/my-skill
 
 # Package a skill to specific output directory
-cd .agent/skills/skill-creator
-uv run --no-active scripts/package_skill.py skills/public/my-skill ./dist
+run_python_skill.sh skill-creator package_skill.py skills/public/my-skill ./dist
 ```
 
-**⚠️ WARNING:** Running uv commands from any other directory will fail because the pyproject.toml and dependency isolation won't be found.
+**⚠️ WARNING:** Do NOT use manual `cd` and `uv run` commands. The universal runner handles directory changes and dependency isolation automatically.
 
 The packaging script will:
 

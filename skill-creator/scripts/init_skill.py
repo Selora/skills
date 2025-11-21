@@ -408,26 +408,25 @@ def init_skill(skill_name, path):
 def main():
     if len(sys.argv) < 4 or sys.argv[2] != "--path":
         print("Usage: init_skill.py <skill-name> --path <path>")
+        print("\n⚠️  IMPORTANT: Use the universal skill runner!")
+        print("   First ensure run_python_skill.sh is in PATH (see SKILL.md for setup)")
+        print("   NOTE: .scripts/ is at project root, not in skill directories")
+        print("   Use project-local PATH setup (PATH_add macro in .envrc)")
         print(
-            "\n⚠️  IMPORTANT: This script must be run from the skill-creator directory!"
+            "   Then run: run_python_skill.sh skill-creator init_skill.py <skill-name> --path <path>"
         )
-        print("   First run: cd .agent/skills/skill-creator")
-        print(
-            "   Then run: uv run --no-active scripts/init_skill.py <skill-name> --path <path>"
-        )
+
         print("\nSkill name requirements:")
         print("  - Hyphen-case identifier (e.g., 'data-analyzer')")
         print("  - Lowercase letters, digits, and hyphens only")
         print("  - Max 40 characters")
         print("  - Must match directory name exactly")
         print("\nComplete examples:")
-        print("  cd .agent/skills/skill-creator")
         print(
-            "  uv run --no-active scripts/init_skill.py my-new-skill --path skills/public"
+            "  run_python_skill.sh skill-creator init_skill.py my-new-skill --path skills/public"
         )
-        print("  cd .agent/skills/skill-creator")
         print(
-            "  uv run --no-active scripts/init_skill.py my-api-helper --path skills/private"
+            "  run_python_skill.sh skill-creator init_skill.py my-api-helper --path skills/private"
         )
         sys.exit(1)
 

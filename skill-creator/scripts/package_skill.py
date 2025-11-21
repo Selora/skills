@@ -183,17 +183,27 @@ def package_skill(skill_path, output_dir=None):
 def main():
     if len(sys.argv) < 2:
         print("Usage: package_skill.py <path/to/skill-folder> [output-directory]")
-        print("\n⚠️  IMPORTANT: This script must be run from skill-creator directory!")
-        print("   First run: cd .agent/skills/skill-creator")
+        print("\n⚠️  IMPORTANT: Use the universal skill runner!")
+        print("   First ensure run_python_skill.sh is in PATH (see SKILL.md for setup)")
+        print("   NOTE: .scripts/ is at project root, not in skill directories")
+        print("   Use project-local PATH setup (PATH_add macro in .envrc)")
         print(
-            "   Then run: uv run --no-active scripts/package_skill.py <path/to/skill-folder>"
+            "   Then run: run_python_skill.sh skill-creator package_skill.py <path/to/skill-folder>"
         )
         print("\nComplete examples:")
-        print("  cd .agent/skills/skill-creator")
-        print("  uv run --no-active scripts/package_skill.py skills/public/my-skill")
-        print("  cd .agent/skills/skill-creator")
         print(
-            "  uv run --no-active scripts/package_skill.py skills/public/my-skill ./dist"
+            "  run_python_skill.sh skill-creator package_skill.py skills/public/my-skill"
+        )
+        print(
+            "  run_python_skill.sh skill-creator package_skill.py skills/public/my-skill ./dist"
+        )
+
+        print("\nComplete examples:")
+        print(
+            "  run_python_skill.sh skill-creator package_skill.py skills/public/my-skill"
+        )
+        print(
+            "  run_python_skill.sh skill-creator package_skill.py skills/public/my-skill ./dist"
         )
         sys.exit(1)
 
