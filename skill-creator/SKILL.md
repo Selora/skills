@@ -300,7 +300,7 @@ The script:
 
 After initialization, customize or remove the generated SKILL.md and example files as needed.
 
-### Step 3.5: Validate the Skill (Optional)
+### Step 3.5: Validate the Skill
 
 You can validate a skill at any time during development to check for compliance with skill requirements:
 
