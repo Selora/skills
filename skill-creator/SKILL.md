@@ -22,55 +22,6 @@ equipped with procedural knowledge that no model can fully possess.
 3. Domain expertise - Company-specific knowledge, schemas, business logic
 4. Bundled resources - Scripts, references, and assets for complex and repetitive tasks
 
-## Skill Execution Requirements
-
-**IMPORTANT**: All Python skill execution MUST use the universal skill runner `run_python_skill.sh`.
-
-### PATH Setup (One-Time Configuration)
-
-**IMPORTANT**: `.scripts` directory is at the **project root** (same level as `.agent/`), not inside individual skill directories.
-
-**Project Structure:**
-
-```
-project-root/
-├── .agent/
-│   └── skills/
-│       ├── skill-creator/
-│       ├── html-to-markdown/
-│       └── ip-fetcher/
-└── .scripts/                    # ← HERE - at project root
-    └── run_python_skill.sh   # ← symlinked here
-```
-
-**Option 1: Add to PATH (Project-Local)**
-```bash
-# From project root (where .agent/ directory is located)
-export PATH="$(pwd)/.scripts:$PATH"
-
-# Add to .envrc for project-specific PATH setup (uses existing PATH_add macro)
-echo 'PATH_add "$(pwd)/.scripts"' >> .envrc
-```
-
-**Option 2: Use devenv Environment**
-
-- If using devenv with agent profile, PATH is automatically configured
-- The runner is symlinked from project root to `.scripts/run_python_skill.sh`
-
-**Option 3: Portable Fallback**
-
-- If PATH modification is not possible: `.agent/skills/skill-creator/assets/run_python_skill.sh`
-
-### Usage (After PATH Setup)
-
-Once `run_python_skill.sh` is in PATH, all examples use this clean syntax:
-
-```bash
-run_python_skill.sh <skill-name> <script-name> [args...]
-```
-
-The universal runner handles directory changes, uv execution, and argument passing. Do NOT use manual `cd` and `uv run` commands - this creates inconsistencies and errors.
-
 ## Core Principles
 
 ### Concise is Key
@@ -104,11 +55,14 @@ skill-name/
 │   │   ├── name: (required)
 │   │   └── description: (required)
 │   └── Markdown instructions (required)
+├── pyproject.toml (Optional)
 └── Bundled Resources (optional)
     ├── scripts/          - Executable code (Python/Bash/etc.)
     ├── references/       - Documentation intended to be loaded into context as needed
     └── assets/           - Files used in output (templates, icons, fonts, etc.)
 ```
+
+If the skill directory contains a `pyproject.toml` file, load `references/python-scripts.md` to know how to modify, run or create while following the proper process.
 
 #### SKILL.md (required)
 
@@ -130,101 +84,11 @@ Executable code (Python/Bash/etc.) for tasks that require deterministic reliabil
 
 ##### Python scripts
 
-Depends on `uv` being installed & in PATH.
-
-Python skills are self-contained `uv` projects and MUST NOT modify or depend on the host project’s environment.
-
-**Layout**
-
-- Each skill directory contains:
-  - its own `pyproject.toml` (skill-only dependencies)
-  - a `scripts/` subdirectory with one or more `*.py` files
-  - a uv-managed `.venv/` (created on first run, not committed)
-
-Example:
-
-```text
-skills/
-  <skill-name>/
-    pyproject.toml
-    scripts/
-      main.py
-      helpers.py
-```
-
-**Agent execution rules (Python)**
-
-When an agent uses a Python skill:
-
-1. **Set the working directory** to the skill root (the directory containing `pyproject.toml`), e.g.:
-
-   - `cwd = skills/<skill-name>`
-
-2. **Run the entry script via uv**:
-
-   ```bash
-   uv run --no-active scripts/main.py
-   ```
-
-   - `scripts/main.py` is the entrypoint. It may also call other scripts directly, providing they have an `if __name__ == "__main__":` block.
-   - Other modules from `scripts/`  can be imported using normal Python imports (`from helpers import …`).
-   - uv resolves dependencies from the skill’s `pyproject.toml`, creates/reuses the skill-local `.venv/`, and ignores any active outer `.venv`.
-   - Agents MUST pass `--no-active` when running skills. This silence warnings when a .venv is already activated.
-   - Agents MUST NOT use `--active` for skills (that would deliberately bind them to the host project’s venv).
-
-**Agents MUST NOT**
-
-- Run `uv` from the host project root targeting scripts inside a skill.
-- Add skill dependencies to the host project.
-- Bind skills to the host project’s interpreter or virtual environment.
-
-### Universal Skill Runner
-
-To ensure consistent execution across all environments, use the universal skill runner script:
-
-**Primary Usage (when available in PATH):**
-
-```bash
-run_python_skill.sh <skill-name> <script-name> [args...]
-```
-
-**Portable Usage (when not in PATH):**
-
-```bash
-# From skill-creator assets
-.agent/skills/skill-creator/assets/run_python_skill.sh <skill-name> <script-name> [args...]
-
-# Or copy to your project and use:
-.scripts/run_python_skill.sh <skill-name> <script-name> [args...]
-```
-
-**Features:**
-
-- Handles directory changes automatically
-- Validates skill paths and script names
-- Supports nested skills (e.g., `document-skills/docx`)
-- Passes all arguments 1:1 to Python scripts
-- Works with custom `SKILL_DIR` environment variable
-- Provides clear error messages and colored output
-
-**Examples:**
-
-```bash
-# Simple skill
-run_python_skill.sh html-to-markdown convert.py input.html
-
-# Nested skill
-run_python_skill.sh document-skills/docx convert.py document.docx
-
-# Custom skill directory
-SKILL_DIR=/custom/skills run_python_skill.sh my-skill script.py arg1 arg2
-```
-
-The runner script is included in `skill-creator/assets/run_python_skill.sh` for portability outside this development environment.
+When writing skills helper script in *python*, read `references/python-scripts.md`
 
 ##### References (`references/`)
 
-Documentation and reference material intended to be loaded as needed into context to inform Claude's process and thinking.
+Skills Documentation and reference material intended to be loaded as needed into context to inform Claude's process and thinking.
 
 - **When to include**: For documentation that Claude should reference while working
 - **Examples**: `references/finance.md` for financial schemas, `references/mnda.md` for company NDA template, `references/policies.md` for company policies, `references/api_docs.md` for API specifications
@@ -406,8 +270,6 @@ When creating a new skill from scratch, always run the `init_skill.py` script. T
 
 **Agent Execution Instructions:**
 
-Since the skill-creator uses Python scripts, agents must use UV for isolated execution.
-
 **Use the universal skill runner:**
 
 ```bash
@@ -530,7 +392,7 @@ Since the skill-creator uses Python scripts, agents must use UV for isolated exe
 run_python_skill.sh skill-creator package_skill.py <path/to/skill-folder>
 ```
 
-Optional output directory specification:
+Scripts optional output directory specification:
 
    ```bash
    run_python_skill.sh skill-creator package_skill.py <path/to/skill-folder> ./dist
@@ -576,3 +438,176 @@ After testing the skill, users may request improvements. Often this happens righ
 2. Notice struggles or inefficiencies
 3. Identify how SKILL.md or bundled resources should be updated
 4. Implement changes and test again
+
+## Python Skill Scripts
+
+### Skills-specific Python Code
+
+When the LLM uses code execution to invoke the skill, its only way of getting some introspection on the task is by using the scripts STDOUT output. Scripts STDOUT are transmitted to the LLM.
+
+- We should keep STDOUT minimal, but with enough information (task failed/succeed, wrote output to `<path>`, etc.)
+- Users might want a full output version. LLM might use the full output version to debug/iterate over a skill.
+
+**Requirements**:
+
+- Use `argparse` for script arguments
+- Prefer standard python logging facilities (`logging` module) over `print` statements
+- STDOUT in loops should be kept for more verbose logging level
+- Standard/default invocations triggers the LLM-friendly version
+- Verbose (standard `-v`, `-vv...`) give a more complete output
+
+Bad example of a python script default output:
+
+- Writing every lines of a file parsed.
+
+Good example of a python script default output:
+
+- Brief and informative: `task: Successful\n Parsed X lines, (etc.)`.
+
+Informative and verbose output should still be included, only it needs to be enabled explicitly.
+
+### Execution Requirements
+
+**IMPORTANT**: All skill scripts using python MUST use the universal skill runner `run_python_skill.sh`.
+
+See `references/python-scripts.md` for more details.
+
+#### PATH Setup (One-Time Configuration)
+
+**IMPORTANT**: `.scripts` directory is at the **project root** (same level as `.agent/`), not inside individual skill directories.
+
+**Project Structure:**
+
+```
+project-root/
+├── .agent/
+│   └── skills/
+│       ├── skill-creator/
+│       ├── html-to-markdown/
+│       └── ip-fetcher/
+└── .scripts/                    # ← HERE - at project root
+    └── run_python_skill.sh   # ← symlinked here
+```
+
+**Option 1: Add to PATH (Project-Local)**
+
+```bash
+# From project root (where .agent/ directory is located)
+export PATH="$(pwd)/.scripts:$PATH"
+
+# Add to .envrc for project-specific PATH setup (uses existing PATH_add macro)
+echo 'PATH_add "$(pwd)/.scripts"' >> .envrc
+```
+
+**Option 2: Use devenv Environment**
+
+- If using devenv with agent profile, PATH is automatically configured
+- The runner is symlinked from project root to `.scripts/run_python_skill.sh`
+
+**Option 3: Portable Fallback**
+
+- If PATH modification is not possible: `.agent/skills/skill-creator/assets/run_python_skill.sh`
+
+#### Usage (After PATH Setup)
+
+Once `run_python_skill.sh` is in PATH, all examples use this clean syntax:
+
+```bash
+run_python_skill.sh <skill-name> <script-name> [args...]
+```
+
+The universal runner handles directory changes, uv execution, and argument passing. Do NOT use manual `cd` and `uv run` commands - this creates inconsistencies and errors.
+
+Python scripts should use python logging facilities (`logging` module). Standard invocation triggers the LLM-friendly version, verbose (standard `-v`, `-vv...`) allows the user or the LLM to debug the script more in depth.
+
+Depends on `uv` being installed & in PATH.
+
+Python skills are self-contained `uv` projects and MUST NOT modify or depend on the host project’s environment.
+
+**Layout**
+
+- Each skill directory contains:
+  - its own `pyproject.toml` (skill-only dependencies)
+  - a `scripts/` subdirectory with one or more `*.py` files
+  - a uv-managed `.venv/` (created on first run, not committed)
+
+Example:
+
+```text
+skills/
+  <skill-name>/
+    pyproject.toml
+    scripts/
+      main.py
+      helpers.py
+```
+
+**Agent execution rules (Python)**
+
+When an agent uses a Python skill:
+
+1. **Set the working directory** to the skill root (the directory containing `pyproject.toml`), e.g.:
+
+   - `cwd = skills/<skill-name>`
+
+2. **Run the entry script via uv**:
+
+   ```bash
+   uv run --no-active scripts/main.py
+   ```
+
+   - `scripts/main.py` is the entrypoint. It may also call other scripts directly, providing they have an `if __name__ == "__main__":` block.
+   - Other modules from `scripts/`  can be imported using normal Python imports (`from helpers import …`).
+   - uv resolves dependencies from the skill’s `pyproject.toml`, creates/reuses the skill-local `.venv/`, and ignores any active outer `.venv`.
+   - Agents MUST pass `--no-active` when running skills. This silence warnings when a .venv is already activated.
+   - Agents MUST NOT use `--active` for skills (that would deliberately bind them to the host project’s venv).
+
+**Agents MUST NOT**
+
+- Run `uv` from the host project root targeting scripts inside a skill.
+- Add skill dependencies to the host project.
+- Bind skills to the host project’s interpreter or virtual environment.
+
+#### Universal Skill Runner
+
+To ensure consistent execution across all environments, use the universal skill runner script:
+
+**Primary Usage (when available in PATH):**
+
+```bash
+run_python_skill.sh <skill-name> <script-name> [args...]
+```
+
+**Portable Usage (when not in PATH):**
+
+```bash
+# From skill-creator assets
+.agent/skills/skill-creator/assets/run_python_skill.sh <skill-name> <script-name> [args...]
+
+# Or copy to your project and use:
+.scripts/run_python_skill.sh <skill-name> <script-name> [args...]
+```
+
+**Features:**
+
+- Handles directory changes automatically
+- Validates skill paths and script names
+- Supports nested skills (e.g., `document-skills/docx`)
+- Passes all arguments 1:1 to Python scripts
+- Works with custom `SKILL_DIR` environment variable
+- Provides clear error messages and colored output
+
+**Examples:**
+
+```bash
+# Simple skill
+run_python_skill.sh html-to-markdown convert.py input.html
+
+# Nested skill
+run_python_skill.sh document-skills/docx convert.py document.docx
+
+# Custom skill directory
+SKILL_DIR=/custom/skills run_python_skill.sh my-skill script.py arg1 arg2
+```
+
+The runner script is included in `skill-creator/assets/run_python_skill.sh` for portability outside this development environment.
